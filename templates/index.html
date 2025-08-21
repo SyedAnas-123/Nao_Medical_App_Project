@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Healthcare Translation Web App</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="/static/style.css" />
+</head>
+<body>
+  <main class="container">
+    <h1>Healthcare Translation Web App</h1>
+    <p class="subtitle">Real-time multilingual translator for patients & providers</p>
+
+    <!-- Language selectors -->
+    <section class="panel">
+      <div class="row">
+        <label>🎤 Input language</label>
+        <select id="inputLang"></select>
+      </div>
+      <div class="row">
+        <label>🌐 Output language</label>
+        <select id="outputLang"></select>
+      </div>
+      <div class="row">
+        <label class="inline">
+          <input type="checkbox" id="liveMode" />
+          Live translate on final chunks
+        </label>
+      </div>
+    </section>
+
+    <!-- Controls -->
+    <section class="panel controls">
+      <button id="startBtn">Start Recording</button>
+      <button id="stopBtn" class="danger" disabled>Stop</button>
+      <button id="translateBtn" class="primary">🔄 Translate</button>
+      <button id="speakBtn" class="success">🔊 Speak</button>
+    </section>
+
+    <!-- Dual transcripts -->
+    <section class="grid-2">
+      <div class="card">
+        <h3>Original Transcript</h3>
+        <div id="original" class="text-box">—</div>
+      </div>
+      <div class="card">
+        <h3>Translated Transcript</h3>
+        <div id="translated" class="text-box">—</div>
+      </div>
+    </section>
+
+    <p class="note">
+      Privacy: Audio stays in the browser for STT/TTS. Only text is sent to the server for translation.
+    </p>
+  </main>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>
