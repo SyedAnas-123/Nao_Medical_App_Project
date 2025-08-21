@@ -1,60 +1,68 @@
-// Web Speech API STT, GPT translation via Flask, and Web Speech Synthesis TTS
+// ================== Web Speech Translator ==================
+// Handles: 
+// - Speech-to-Text (STT) via Web Speech API
+// - Translation via Flask backend (OpenAI GPT)
+// - Text-to-Speech (TTS) playback
 
-// ======== Language options (STT+TTS) ========
+// ======== Language options (STT + TTS) ========
 const LANGS = [
   { label: "English (US)", code: "en-US" },
   { label: "English (UK)", code: "en-GB" },
-  { label: "Hindi(Indian)", code: "hi-IN" },
+  { label: "Hindi (India)", code: "hi-IN" },
   { label: "Spanish (Spain)", code: "es-ES" },
   { label: "Spanish (Mexico)", code: "es-MX" },
   { label: "German", code: "de-DE" },
   { label: "French", code: "fr-FR" },
-  
 ];
 
-// ======== DOM refs ========
-const inputSel = document.getElementById("inputLang");
-const outputSel = document.getElementById("outputLang");
-const liveMode = document.getElementById("liveMode");
-const startBtn = document.getElementById("startBtn");
-const stopBtn = document.getElementById("stopBtn");
-const translateBtn = document.getElementById("translateBtn");
-const speakBtn = document.getElementById("speakBtn");
+// ======== DOM references ========
+const inputSel = document.getElementById("inputLang");   // Input language selector
+const outputSel = document.getElementById("outputLang"); // Output language selector
+const liveMode = document.getElementById("liveMode");    // Checkbox for live translation
+const startBtn = document.getElementById("startBtn");    // Start recording
+const stopBtn = document.getElementById("stopBtn");      // Stop recording
+const translateBtn = document.getElementById("translateBtn"); // Manual translate button
+const speakBtn = document.getElementById("speakBtn");    // Speak translated text
 
-const originalBox = document.getElementById("original");
-const translatedBox = document.getElementById("translated");
+const originalBox = document.getElementById("original");     // Original text box
+const translatedBox = document.getElementById("translated"); // Translated text box
 
-// Populate selects
+// ======== Populate language dropdowns ========
 for (const l of LANGS) {
   const o1 = document.createElement("option");
-  o1.value = l.code; o1.textContent = l.label;
+  o1.value = l.code; 
+  o1.textContent = l.label;
   inputSel.appendChild(o1);
 
   const o2 = document.createElement("option");
-  o2.value = l.code; o2.textContent = l.label;
+  o2.value = l.code; 
+  o2.textContent = l.label;
   outputSel.appendChild(o2);
 }
+// Default values
 inputSel.value = "ur-PK";
 outputSel.value = "en-US";
 
-// ======== STT (Web Speech API) ========
-let recognition = null;
-let isRecording = false;
-let bufferText = ""; // accumulates final transcripts
+// ======== STT (Speech-to-Text) ========
+let recognition = null;   // SpeechRecognition instance
+let isRecording = false;  // Flag for recording state
+let bufferText = "";      // Holds accumulated speech text
 
+// Initialize speech recognizer
 function initRecognizer() {
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
   if (!SR) {
-    alert("Web Speech API (SpeechRecognition) not supported in this browser. Try Chrome/Edge.");
+    alert("Web Speech API not supported. Use Chrome/Edge.");
     return null;
   }
   const rec = new SR();
-  rec.continuous = true;          // keep listening
-  rec.interimResults = true;      // show interim
+  rec.continuous = true;     // Keep listening until stopped
+  rec.interimResults = true; // Show partial results
   rec.maxAlternatives = 1;
   return rec;
 }
 
+// Start recording voice
 function startRecording() {
   if (isRecording) return;
   recognition = initRecognizer();
@@ -64,36 +72,45 @@ function startRecording() {
   originalBox.textContent = "Listening…";
   translatedBox.textContent = "—";
 
+  // Set input language
   recognition.lang = inputSel.value;
+
+  // Handle STT results
   recognition.onresult = async (event) => {
     let interim = "";
     for (let i = event.resultIndex; i < event.results.length; i++) {
       const res = event.results[i];
       const txt = res[0].transcript;
+      
       if (res.isFinal) {
+        // Final text → append to buffer
         bufferText += (bufferText ? " " : "") + txt.trim();
         originalBox.textContent = bufferText;
-        // Live mode: translate each final chunk
+
+        // Live mode translation (chunk-by-chunk)
         if (liveMode.checked && txt.trim()) {
           const translated = await translateViaAPI(txt.trim(), inputSel.value, outputSel.value);
-          // Append translation line by line
           const prev = translatedBox.textContent === "—" ? "" : translatedBox.textContent + " ";
           translatedBox.textContent = (prev + translated).trim();
         }
       } else {
+        // Interim (not final yet)
         interim += txt;
       }
     }
     if (interim) {
-      // show live interim
+      // Show interim text in parentheses
       originalBox.textContent = (bufferText ? bufferText + " " : "") + "(" + interim + ")";
     }
   };
+
+  // Handle errors
   recognition.onerror = (e) => {
     console.error("STT error:", e.error);
   };
+
+  // Handle auto-stop
   recognition.onend = () => {
-    // Auto-stop UI state; user can click start again
     isRecording = false;
     startBtn.disabled = false;
     stopBtn.disabled = true;
@@ -105,6 +122,7 @@ function startRecording() {
   stopBtn.disabled = false;
 }
 
+// Stop recording voice
 function stopRecording() {
   if (!recognition) return;
   try { recognition.stop(); } catch {}
@@ -113,7 +131,7 @@ function stopRecording() {
   stopBtn.disabled = true;
 }
 
-// ======== Translation (Flask → OpenAI) ========
+// ======== Translation (Flask API → OpenAI GPT) ========
 async function translateViaAPI(text, fromLang, toLang) {
   const res = await fetch("/api/translate", {
     method: "POST",
@@ -128,7 +146,7 @@ async function translateViaAPI(text, fromLang, toLang) {
   return data.translated || "";
 }
 
-// Manual translate entire buffer
+// Manual translation (for full text at once)
 async function doTranslate() {
   const srcText = (originalBox.textContent || "").replace(/^—$/, "").trim();
   if (!srcText) return;
@@ -136,21 +154,21 @@ async function doTranslate() {
   translatedBox.textContent = translated || "—";
 }
 
-// ======== TTS (Web Speech Synthesis) ========
+// ======== TTS (Text-to-Speech) ========
 function speak(text, langCode) {
   if (!("speechSynthesis" in window)) {
-    alert("Speech Synthesis not supported in this browser.");
+    alert("Speech Synthesis not supported.");
     return;
   }
   const utter = new SpeechSynthesisUtterance(text);
   utter.lang = langCode;
 
-  // Try to pick a voice matching the lang
+  // Select a matching voice
   const pickVoice = () => {
     const voices = window.speechSynthesis.getVoices() || [];
     const match = voices.find(v => v.lang && (v.lang === langCode || v.lang.startsWith(langCode.split("-")[0])));
     if (match) utter.voice = match;
-    window.speechSynthesis.cancel(); // stop prior
+    window.speechSynthesis.cancel(); // Stop any previous speech
     window.speechSynthesis.speak(utter);
   };
 
@@ -161,7 +179,7 @@ function speak(text, langCode) {
   }
 }
 
-// ======== Wire up ========
+// ======== Hook up buttons ========
 startBtn.addEventListener("click", startRecording);
 stopBtn.addEventListener("click", stopRecording);
 translateBtn.addEventListener("click", doTranslate);
