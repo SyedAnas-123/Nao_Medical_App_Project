@@ -47,6 +47,6 @@ button:disabled { opacity: .6; cursor: not-allowed; }
 
 .text-box {
   min-height: 100px; padding: 15px; border: 2px dashed var(--border); border-radius: 12px;
-  background: #fafafa; white-space: pre-wrap;
+  background: #d91111ff; white-space: pre-wrap;
 }
 .note { color: var(--muted); font-size: 14px; margin-top: 12px; }
