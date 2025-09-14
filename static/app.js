@@ -128,7 +128,7 @@ function stopRecording() {
   try { recognition.stop(); } catch {}
   isRecording = false;
   startBtn.disabled = false;
-  stopBtn.disabled = true;
+  stopBtn.disabled = true ;
 }
 
 // ======== Translation (Flask API → OpenAI GPT) ========
