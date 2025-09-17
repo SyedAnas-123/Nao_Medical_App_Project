@@ -35,7 +35,7 @@ h1 { margin: 8px 0 0; }
 .controls { display: flex; gap: 10px; flex-wrap: wrap; }
 button {
   border: none; border-radius: 12px; padding: 10px 14px; font-weight: 600;
-  background: #111827; color: rgb(243, 17, 17); cursor: pointer;
+  background: #111827; color: rgb(243, 237, 237); cursor: pointer;
 }
 button.primary { background: var(--brand); }
 button.success { background: var(--ok); }
